@@ -24,6 +24,10 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    companion object {
+        const val EXTRA_SOURCE = "extra_source"
+    }
 }
 
 @Composable

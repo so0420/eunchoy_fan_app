@@ -67,4 +67,14 @@ object Net {
             resp.body?.string().orEmpty()
         }
     }
+
+    /** Raw GET returning bytes (notification images). Returns null on any failure. */
+    suspend fun getBytes(url: String): ByteArray? = withContext(Dispatchers.IO) {
+        runCatching {
+            val req = Request.Builder().url(url).header("User-Agent", Config.UA).build()
+            client.newCall(req).execute().use { resp ->
+                if (!resp.isSuccessful) null else resp.body?.bytes()
+            }
+        }.getOrNull()
+    }
 }
