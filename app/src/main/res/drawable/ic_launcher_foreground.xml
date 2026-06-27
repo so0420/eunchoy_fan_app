@@ -1,0 +1,14 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Heart (fan app) in white on icy-blue background -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,75 C54,75 35,63 35,50.5 C35,43.5 40.2,39 45.6,39 C49.8,39 52.7,41.6 54,44 C55.3,41.6 58.2,39 62.4,39 C67.8,39 73,43.5 73,50.5 C73,63 54,75 54,75 Z" />
+    <!-- sparkle -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M70,33 L71.4,37.2 L75.6,38.6 L71.4,40 L70,44.2 L68.6,40 L64.4,38.6 L68.6,37.2 Z" />
+</vector>
