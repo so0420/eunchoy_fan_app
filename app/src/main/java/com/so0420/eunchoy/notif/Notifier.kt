@@ -3,11 +3,14 @@ package com.so0420.eunchoy.notif
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import com.so0420.eunchoy.MainActivity
 import com.so0420.eunchoy.R
 import com.so0420.eunchoy.data.SourceKey
@@ -39,6 +42,12 @@ class Notifier(private val context: Context) {
     }
 
     private fun postNormal(payload: AlertPayload, image: Bitmap?) {
+        if (Build.VERSION.SDK_INT >= 33 &&
+            ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
         val builder = NotificationCompat.Builder(context, NotificationChannels.ALERT)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(payload.title)

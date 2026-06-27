@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <!-- Media3 (ExoPlayer) ships much of its API as @UnstableApi; we intentionally opt in. -->
+    <issue id="UnsafeOptInUsageError">
+        <option name="opt-in" value="androidx.media3.common.util.UnstableApi" />
+    </issue>
+    <!-- Versions are intentionally pinned to a known-good, mutually compatible set. -->
+    <issue id="GradleDependency" severity="ignore" />
+</lint>
