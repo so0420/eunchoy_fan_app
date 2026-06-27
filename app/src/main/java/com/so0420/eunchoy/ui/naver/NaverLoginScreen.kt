@@ -13,6 +13,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.so0420.eunchoy.ui.theme.SkySurface
 import com.so0420.eunchoy.ui.web.AppWebView
@@ -24,6 +28,8 @@ import com.so0420.eunchoy.ui.web.AppWebView
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NaverLoginScreen(onLoggedIn: (aut: String, ses: String) -> Unit, onBack: () -> Unit) {
+    // onPageFinished fires on every redirect; only report the captured cookies once.
+    var reported by remember { mutableStateOf(false) }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -45,7 +51,8 @@ fun NaverLoginScreen(onLoggedIn: (aut: String, ses: String) -> Unit, onBack: () 
                 val cookie = CookieManager.getInstance().getCookie("https://naver.com")
                 val aut = cookieValue(cookie, "NID_AUT")
                 val ses = cookieValue(cookie, "NID_SES")
-                if (!aut.isNullOrBlank() && !ses.isNullOrBlank()) {
+                if (!reported && !aut.isNullOrBlank() && !ses.isNullOrBlank()) {
+                    reported = true
                     onLoggedIn(aut, ses)
                 }
             },

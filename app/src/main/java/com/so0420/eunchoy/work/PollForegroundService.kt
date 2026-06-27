@@ -32,12 +32,17 @@ class PollForegroundService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        ServiceCompat.startForeground(
-            this,
-            FG_ID,
-            buildNotification(),
-            if (Build.VERSION.SDK_INT >= 29) ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC else 0,
-        )
+        try {
+            ServiceCompat.startForeground(
+                this,
+                FG_ID,
+                buildNotification(),
+                if (Build.VERSION.SDK_INT >= 29) ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC else 0,
+            )
+        } catch (e: Exception) {
+            stopSelf()
+            return START_NOT_STICKY
+        }
         if (!started) {
             started = true
             val container = (applicationContext as EunchoyApp).container
@@ -66,6 +71,16 @@ class PollForegroundService : Service() {
                 ),
             )
             .build()
+
+    // Android 15 caps a dataSync FGS at ~6h/24h; on timeout we must stop promptly. The WorkManager
+    // periodic poll remains as the durable fallback.
+    override fun onTimeout(startId: Int) {
+        stopSelf()
+    }
+
+    override fun onTimeout(startId: Int, fgsType: Int) {
+        stopSelf()
+    }
 
     override fun onDestroy() {
         scope.cancel()

@@ -33,9 +33,12 @@ object PollScheduler {
     }
 
     fun startFast(context: Context) {
-        ContextCompat.startForegroundService(
-            context, Intent(context, PollForegroundService::class.java),
-        )
+        // Caller should already be foreground; guard anyway so a denied background start never crashes.
+        runCatching {
+            ContextCompat.startForegroundService(
+                context, Intent(context, PollForegroundService::class.java),
+            )
+        }
     }
 
     fun stopFast(context: Context) {

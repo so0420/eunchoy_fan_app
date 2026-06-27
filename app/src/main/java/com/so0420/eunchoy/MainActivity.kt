@@ -6,9 +6,12 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.lifecycle.lifecycleScope
 import com.so0420.eunchoy.data.SourceKey
 import com.so0420.eunchoy.ui.MainScreen
 import com.so0420.eunchoy.ui.theme.EunchoyTheme
+import com.so0420.eunchoy.work.PollScheduler
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -25,6 +28,16 @@ class MainActivity : ComponentActivity() {
         setContent {
             EunchoyTheme {
                 MainScreen(startRoute = startRoute)
+            }
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        // Re-arm the fast foreground poller from a guaranteed-foreground context (safe FGS start).
+        lifecycleScope.launch {
+            if (appContainer.settings.current().fastPolling) {
+                PollScheduler.startFast(this@MainActivity)
             }
         }
     }

@@ -6,6 +6,8 @@ import com.so0420.eunchoy.data.SourceKey
 import com.so0420.eunchoy.data.settings.AppSettings
 import com.so0420.eunchoy.data.settings.SourcePrefs
 import com.so0420.eunchoy.notif.AlertPayload
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * Polls every enabled source once, diffs against persisted "seen" state, and emits notifications
@@ -17,7 +19,9 @@ class Poller(private val container: AppContainer) {
     private val settings get() = container.settings
     private val notifier get() = container.notifier
 
-    suspend fun runOnce() {
+    suspend fun runOnce() = mutex.withLock {
+        // Serialize across the periodic worker + fast foreground service (same process) so the
+        // getSeen -> setSeen read-modify-write can't interleave and double-notify.
         val s = settings.current()
         safe { checkLive(s) }
         safe { checkCommunity(s) }
@@ -40,11 +44,15 @@ class Poller(private val container: AppContainer) {
         val prefs = s.prefs(SourceKey.CHZZK_LIVE)
         if (!prefs.notify) return
         val detail = repo.liveDetail() ?: return
-        if (!detail.isLive || detail.openDate == null) return
         val prev = settings.getSeen(SourceKey.CHZZK_LIVE)
+        if (!detail.isLive || detail.openDate == null) {
+            // Record "observed offline" so the next CLOSE->OPEN is treated as new even right after install.
+            if (prev == null) settings.setSeen(SourceKey.CHZZK_LIVE, OFFLINE_SENTINEL)
+            return
+        }
         if (prev == detail.openDate) return
         settings.setSeen(SourceKey.CHZZK_LIVE, detail.openDate)
-        if (prev == null) return // seed only
+        if (prev == null) return // first poll caught an already-running broadcast -> seed only
         val cat = detail.liveCategoryValue?.let { " · $it" }.orEmpty()
         emit(
             prefs,
@@ -138,13 +146,15 @@ class Poller(private val container: AppContainer) {
         if (!prefs.notify) return
         val videos = if (key == SourceKey.YOUTUBE_MAIN) repo.youtubeMain() else repo.youtubeVod()
         if (videos.isEmpty()) return
-        val maxTs = videos.mapNotNull { it.publishedAt?.epochSecond }.maxOrNull() ?: return
-        val prev = settings.getSeen(key)?.toLongOrNull()
-        settings.setSeen(key, maxTs.toString())
-        if (prev == null) return
-        val fresh = videos.filter { (it.publishedAt?.epochSecond ?: 0) > prev }
+        // Track recently-seen video ids (RSS is newest-first) instead of a timestamp watermark,
+        // so a re-published/late-surfacing video isn't silently missed.
+        val seenRaw = settings.getSeen(key)
+        val seenIds = seenRaw?.split(",")?.filter { it.isNotBlank() }?.toSet().orEmpty()
+        settings.setSeen(key, videos.map { it.id }.take(30).joinToString(","))
+        if (seenRaw == null) return // seed
+        val fresh = videos.filter { it.id !in seenIds }
         if (fresh.isEmpty()) return
-        val newest = fresh.maxByOrNull { it.publishedAt?.epochSecond ?: 0 }!!
+        val newest = fresh.first()
         val label = if (key == SourceKey.YOUTUBE_MAIN) "📺 새 영상 (메인)" else "📼 새 영상 (다시보기)"
         emit(
             prefs,
@@ -184,4 +194,9 @@ class Poller(private val container: AppContainer) {
     }
 
     private fun countSuffix(n: Int): String = if (n > 1) " (외 ${n - 1}개)" else ""
+
+    private companion object {
+        const val OFFLINE_SENTINEL = "offline"
+        val mutex = Mutex()
+    }
 }

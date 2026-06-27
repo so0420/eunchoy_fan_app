@@ -136,14 +136,24 @@ object TwitterRss {
     private fun extractImages(html: String): List<String> =
         IMG.findAll(html).map { it.groupValues[1] }.map(::deNitterize).distinct().toList()
 
-    /** Nitter proxies images as /pic/<urlencoded original>. Decode back to the twimg CDN url. */
+    /**
+     * Nitter proxies images as /pic/<urlencoded original>. Decode back to the twimg CDN url.
+     * Two shapes: avatars embed the host (pbs.twimg.com%2F...) while tweet media is host-less
+     * (media%2F...jpg) and must be prefixed with the pbs.twimg.com CDN.
+     */
     private fun deNitterize(url: String): String {
         val idx = url.indexOf("/pic/")
         if (idx < 0) return url
         val encoded = url.substring(idx + 5)
         return runCatching {
-            val decoded = URLDecoder.decode(encoded, "UTF-8")
-            if (decoded.startsWith("http")) decoded else "https://$decoded"
+            val decoded = URLDecoder.decode(encoded, "UTF-8").trimStart('/')
+            when {
+                decoded.startsWith("http") -> decoded
+                decoded.startsWith("pbs.twimg.com") ||
+                    decoded.startsWith("video.twimg.com") ||
+                    decoded.startsWith("abs.twimg.com") -> "https://$decoded"
+                else -> "https://pbs.twimg.com/$decoded" // host-less media path
+            }
         }.getOrDefault(url)
     }
 }

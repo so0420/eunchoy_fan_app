@@ -35,7 +35,9 @@ object Net {
                     host == "apis.naver.com" ->
                         b.header("Referer", "https://cafe.naver.com/")
                 }
-                if (host.endsWith("naver.com")) {
+                // Only attach the user's Naver session cookies to genuine naver.com subdomains
+                // (an exact-suffix match like endsWith("naver.com") would also match evilnaver.com).
+                if (host == "naver.com" || host.endsWith(".naver.com")) {
                     NaverSession.cookieHeader()?.let { b.header("Cookie", it) }
                 }
                 chain.proceed(b.build())
