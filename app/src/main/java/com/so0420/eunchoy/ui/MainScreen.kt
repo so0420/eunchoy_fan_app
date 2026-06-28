@@ -128,6 +128,7 @@ fun MainScreen(startRoute: String = "home") {
                 CafeArticleScreen(
                     articleId = entry.arguments?.getLong("id") ?: 0L,
                     onBack = { nav.popBackStack() },
+                    onLogin = { nav.navigate("naver_login") },
                 )
             }
             composable("naver_login") {
