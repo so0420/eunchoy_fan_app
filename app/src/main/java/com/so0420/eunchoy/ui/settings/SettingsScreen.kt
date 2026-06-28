@@ -25,6 +25,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -48,6 +51,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import android.widget.Toast
 import com.so0420.eunchoy.BuildConfig
+import com.so0420.eunchoy.data.NotifyMode
 import com.so0420.eunchoy.data.SourceKey
 import com.so0420.eunchoy.data.model.UpdateInfo
 import com.so0420.eunchoy.data.update.UpdateChecker
@@ -155,20 +159,17 @@ fun SettingsScreen(contentPadding: PaddingValues, onNaverLogin: () -> Unit) {
         item {
             PermissionCard {
                 SourceKey.entries.forEachIndexed { i, key ->
-                    val prefs = s.prefs(key)
                     SourceRow(
                         emoji = key.emoji,
                         label = key.label,
-                        notify = prefs.notify,
-                        alarm = prefs.alarm,
-                        onNotify = { vm.setNotify(key, it) },
-                        onAlarm = { vm.setAlarm(key, it) },
+                        mode = s.prefs(key).mode,
+                        onMode = { vm.setMode(key, it) },
                         last = i == SourceKey.entries.lastIndex,
                     )
                 }
             }
             Text(
-                "‘알람형’을 켜면 해당 소식이 방해금지/무음에서도 알람처럼 울려요.",
+                "‘알람’은 방해금지·무음 모드에서도 알람처럼 계속 울려요. ‘알림’은 일반 푸시 알림이에요.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
@@ -313,37 +314,35 @@ private fun ToggleRow(
     if (!last) Divider()
 }
 
+private val MODE_OPTIONS = listOf(
+    NotifyMode.OFF to "끄기",
+    NotifyMode.NORMAL to "알림",
+    NotifyMode.ALARM to "알람",
+)
+
 @Composable
 private fun SourceRow(
     emoji: String,
     label: String,
-    notify: Boolean,
-    alarm: Boolean,
-    onNotify: (Boolean) -> Unit,
-    onAlarm: (Boolean) -> Unit,
+    mode: NotifyMode,
+    onMode: (NotifyMode) -> Unit,
     last: Boolean,
 ) {
-    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("$emoji  $label", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-            Switch(checked = notify, onCheckedChange = onNotify, colors = switchColors())
-        }
-        Row(
-            Modifier.fillMaxWidth().padding(top = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                "알람형 (소리 강제)",
-                style = MaterialTheme.typography.bodySmall,
-                color = if (notify) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.outline,
-                modifier = Modifier.weight(1f),
-            )
-            Switch(
-                checked = alarm && notify,
-                onCheckedChange = onAlarm,
-                enabled = notify,
-                colors = switchColors(),
-            )
+    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
+        Text(
+            "$emoji  $label",
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+        )
+        Spacer(Modifier.height(8.dp))
+        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+            MODE_OPTIONS.forEachIndexed { i, (m, lbl) ->
+                SegmentedButton(
+                    selected = mode == m,
+                    onClick = { onMode(m) },
+                    shape = SegmentedButtonDefaults.itemShape(i, MODE_OPTIONS.size),
+                ) { Text(lbl) }
+            }
         }
     }
     if (!last) Divider()
