@@ -186,7 +186,7 @@ fun SettingsScreen(contentPadding: PaddingValues, onNaverLogin: () -> Unit) {
 
         item {
             Text(
-                "은초이 팬앱 · 비공식 팬 제작물\n각 플랫폼의 비공개 API/RSS를 사용하며, 정책 변경 시 일부 기능이 동작하지 않을 수 있어요.",
+                "은초이 모아보기 · 비공식 팬 제작물\n각 플랫폼의 비공개 API/RSS를 사용하며, 정책 변경 시 일부 기능이 동작하지 않을 수 있어요.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(20.dp),

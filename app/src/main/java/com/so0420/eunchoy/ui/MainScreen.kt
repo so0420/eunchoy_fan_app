@@ -60,7 +60,7 @@ private fun titleFor(route: String?): String = when (route) {
     "youtube" -> "유튜브"
     "x" -> "X · @Eun_choy"
     "settings" -> "설정"
-    else -> "은초이 팬앱"
+    else -> "은초이 모아보기"
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
