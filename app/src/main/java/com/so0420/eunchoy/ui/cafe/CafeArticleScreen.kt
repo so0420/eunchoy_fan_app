@@ -123,7 +123,7 @@ private fun ArticleBody(
                 ArticleHeader(article)
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 HtmlWebView(
-                    html = wrapHtml(article.contentHtml.orEmpty()),
+                    html = wrapHtml(article.contentHtml.orEmpty() + commentsHtml(article)),
                     modifier = Modifier.fillMaxWidth().weight(1f),
                 )
             }
@@ -191,5 +191,65 @@ private fun wrapHtml(content: String): String = """
       iframe { max-width: 100%; }
       .se-component, .se-image, p { margin: 8px 0; }
       table { max-width: 100%; }
+      /* comments */
+      .cmts { border-top: 10px solid #EAF4FD; margin: 24px -16px 0; padding: 14px 16px 4px; }
+      .cmts-h { font-weight: 700; color: #2E83C9; margin-bottom: 4px; font-size: 15px; }
+      .cmt { display: flex; gap: 10px; padding: 11px 0; border-bottom: 1px solid #EFF5FA;
+             align-items: flex-start; }
+      .cmt.reply { margin-left: 28px; }
+      .av { width: 36px; height: 36px; min-width: 36px; min-height: 36px; border-radius: 50%;
+            flex: 0 0 36px; align-self: flex-start; object-fit: cover; background: #E7F1F9; }
+      .b { flex: 1; min-width: 0; }
+      .nick { font-weight: 600; color: #18313F; font-size: 14px; }
+      .badge { background: #D4ECFC; color: #2E83C9; font-size: 11px; padding: 1px 7px;
+               border-radius: 8px; margin-left: 6px; vertical-align: middle; }
+      .date { color: #9DB2C0; font-size: 12px; margin-left: 6px; }
+      .txt { color: #22404F; font-size: 15px; margin-top: 3px; white-space: pre-wrap; word-break: break-word; }
+      .txt.del { color: #9DB2C0; font-style: italic; }
+      .stk { width: 110px !important; max-width: 110px !important; height: auto !important;
+             margin-top: 4px; border-radius: 8px; }
+      .cmt-empty { color: #9DB2C0; padding: 12px 0; }
     </style></head><body>$content</body></html>
 """.trimIndent()
+
+private const val DEFAULT_CAFE_AVATAR =
+    "https://ssl.pstatic.net/static/cafe/cafe_pc/default/cafe_profile_77.png"
+
+private fun escapeHtml(s: String): String = s
+    .replace("&", "&amp;")
+    .replace("<", "&lt;")
+    .replace(">", "&gt;")
+    .replace("\"", "&quot;")
+    .replace("\r", "")
+
+/** Builds the comment thread as styled HTML appended to the article body. */
+private fun commentsHtml(article: CafeArticleContent): String {
+    if (article.commentCount <= 0 && article.comments.isEmpty()) return ""
+    val sb = StringBuilder()
+    sb.append("<div class=\"cmts\"><div class=\"cmts-h\">댓글 ${article.commentCount}</div>")
+    if (article.comments.isEmpty()) {
+        sb.append("<div class=\"cmt-empty\">댓글을 불러오지 못했어요.</div>")
+    }
+    for (c in article.comments) {
+        val cls = if (c.isReply) "cmt reply" else "cmt"
+        val avatar = c.authorImage ?: DEFAULT_CAFE_AVATAR
+        val nick = escapeHtml(c.authorNick ?: "익명")
+        val badge = if (c.isArticleWriter) "<span class=\"badge\">작성자</span>" else ""
+        val date = DateUtil.formatKst(c.createdAt)
+        val body = when {
+            c.isDeleted -> "<div class=\"txt del\">삭제된 댓글입니다</div>"
+            c.stickerUrl != null -> {
+                val txt = if (c.content.isNotBlank()) "<div class=\"txt\">${escapeHtml(c.content)}</div>" else ""
+                "$txt<img class=\"stk\" src=\"${c.stickerUrl}\">"
+            }
+            else -> "<div class=\"txt\">${escapeHtml(c.content)}</div>"
+        }
+        sb.append(
+            "<div class=\"$cls\"><img class=\"av\" src=\"$avatar\">" +
+                "<div class=\"b\"><div><span class=\"nick\">$nick</span>$badge" +
+                "<span class=\"date\">$date</span></div>$body</div></div>",
+        )
+    }
+    sb.append("</div>")
+    return sb.toString()
+}

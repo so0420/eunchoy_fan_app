@@ -54,4 +54,13 @@ interface NaverApi {
         @Query("useCafeId") useCafeId: Boolean = true,
         @Query("requestFrom") requestFrom: String = "A",
     ): CafeArticleResponse
+
+    // All comments for an article (the base endpoint only returns the first page).
+    @GET("cafe-web/cafe-articleapi/v3/cafes/{cafeId}/articles/{articleId}/comments")
+    suspend fun cafeArticleComments(
+        @Path("cafeId") cafeId: Long,
+        @Path("articleId") articleId: Long,
+        @Query("query") query: String = "",
+        @Query("requestFrom") requestFrom: String = "A",
+    ): CafeArticleResponse
 }

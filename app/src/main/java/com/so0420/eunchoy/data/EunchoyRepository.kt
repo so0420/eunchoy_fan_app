@@ -1,6 +1,7 @@
 package com.so0420.eunchoy.data
 
 import com.so0420.eunchoy.data.model.CafeArticleContent
+import com.so0420.eunchoy.data.model.CafeComment
 import com.so0420.eunchoy.data.model.CafePost
 import com.so0420.eunchoy.data.model.ChzzkVod
 import com.so0420.eunchoy.data.model.CommunityPost
@@ -159,6 +160,24 @@ class EunchoyRepository {
             )
         }
         val a = result.article
+        // All comments (the base call only bundles the first page); fall back to that page on failure.
+        val rawComments = runCatching {
+            naver.cafeArticleComments(Config.CAFE_ID, articleId).result.comments?.items
+        }.getOrNull() ?: result.comments?.items.orEmpty()
+        val comments = rawComments.map { c ->
+            CafeComment(
+                id = c.id,
+                isReply = c.refId != 0L && c.refId != c.id,
+                authorNick = c.writer?.nick,
+                authorImage = c.writer?.image?.url,
+                content = c.content,
+                createdAt = DateUtil.fromEpochMillis(c.updateDate),
+                isArticleWriter = c.isArticleWriter,
+                isDeleted = c.isDeleted,
+                // Naver sticker CDN 404s without a resize param; ?type=p100_100 returns the image.
+                stickerUrl = c.sticker?.url?.takeIf { it.isNotBlank() }?.let { "$it?type=p100_100" },
+            )
+        }
         return CafeArticleContent(
             id = articleId,
             subject = a?.subject.orEmpty(),
@@ -168,6 +187,8 @@ class EunchoyRepository {
             createdAt = DateUtil.fromEpochMillis(a?.writeDate),
             needsLogin = false,
             notFound = false,
+            comments = comments,
+            commentCount = a?.commentCount ?: comments.size,
         )
     }
 

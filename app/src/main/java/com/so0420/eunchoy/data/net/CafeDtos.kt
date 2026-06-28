@@ -51,7 +51,26 @@ data class CafeArticleResult(
     val reason: String? = null,
     val article: CafeArticle? = null,
     val user: CafeSessionUser? = null,
+    val comments: CafeComments? = null,
 )
+
+@Serializable
+data class CafeComments(val items: List<CafeCommentDto> = emptyList())
+
+@Serializable
+data class CafeCommentDto(
+    val id: Long = 0,
+    val refId: Long = 0,                   // parent comment id; refId != id => reply
+    val content: String = "",
+    val updateDate: Long = 0,              // epoch millis
+    val isArticleWriter: Boolean = false,
+    val isDeleted: Boolean = false,
+    val sticker: CafeSticker? = null,      // sticker-only comments
+    val writer: CafeWriter? = null,
+)
+
+@Serializable
+data class CafeSticker(val url: String = "")
 
 @Serializable
 data class CafeArticle(

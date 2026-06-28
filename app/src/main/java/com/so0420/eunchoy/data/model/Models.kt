@@ -58,6 +58,20 @@ data class CafeArticleContent(
     val createdAt: Instant?,
     val needsLogin: Boolean,
     val notFound: Boolean,
+    val comments: List<CafeComment> = emptyList(),
+    val commentCount: Int = 0,
+)
+
+data class CafeComment(
+    val id: Long,
+    val isReply: Boolean,
+    val authorNick: String?,
+    val authorImage: String?,
+    val content: String,
+    val createdAt: Instant?,
+    val isArticleWriter: Boolean,
+    val isDeleted: Boolean,
+    val stickerUrl: String?,
 )
 
 data class ChzzkVod(
