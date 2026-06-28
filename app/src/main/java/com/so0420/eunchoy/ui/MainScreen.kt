@@ -50,7 +50,7 @@ private data class Tab(val route: String, val label: String, val icon: ImageVect
 private val TABS = listOf(
     Tab("home", "홈", Icons.Filled.Home),
     Tab("cafe", "카페", Icons.Filled.LocalCafe),
-    Tab("youtube", "영상", Icons.Filled.SmartDisplay),
+    Tab("youtube", "유튜브", Icons.Filled.SmartDisplay),
     Tab("x", "X", Icons.Filled.AlternateEmail),
     Tab("settings", "설정", Icons.Filled.Settings),
 )
