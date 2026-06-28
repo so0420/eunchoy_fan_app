@@ -105,3 +105,10 @@ data class Tweet(
     val permalink: String,
     val imageUrls: List<String>,
 )
+
+/** An available app update discovered from GitHub Releases. */
+data class UpdateInfo(
+    val version: String,
+    val downloadUrl: String,
+    val notes: String,
+)

@@ -18,7 +18,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.navigation.NavType
@@ -28,6 +32,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.so0420.eunchoy.appContainer
+import com.so0420.eunchoy.data.model.UpdateInfo
+import com.so0420.eunchoy.data.update.UpdateChecker
 import com.so0420.eunchoy.ui.cafe.CafeArticleScreen
 import com.so0420.eunchoy.ui.cafe.CafeScreen
 import com.so0420.eunchoy.ui.home.HomeScreen
@@ -37,6 +43,7 @@ import com.so0420.eunchoy.ui.theme.SkyBackground
 import com.so0420.eunchoy.ui.theme.SkyPrimary
 import com.so0420.eunchoy.ui.theme.SkyPrimaryContainer
 import com.so0420.eunchoy.ui.theme.SkySurface
+import com.so0420.eunchoy.ui.update.UpdateDialog
 import com.so0420.eunchoy.ui.x.XScreen
 import com.so0420.eunchoy.ui.youtube.YoutubeScreen
 import androidx.compose.ui.Modifier
@@ -72,6 +79,9 @@ fun MainScreen(startRoute: String = "home") {
     val showBars = TABS.any { it.route == route } || route == null
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+
+    var update by remember { mutableStateOf<UpdateInfo?>(null) }
+    LaunchedEffect(Unit) { update = UpdateChecker.check() }
 
     Scaffold(
         containerColor = SkyBackground,
@@ -142,4 +152,6 @@ fun MainScreen(startRoute: String = "home") {
             }
         }
     }
+
+    update?.let { info -> UpdateDialog(info) { update = null } }
 }

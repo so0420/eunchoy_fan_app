@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,6 +20,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -34,6 +36,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,8 +46,14 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import android.widget.Toast
+import com.so0420.eunchoy.BuildConfig
 import com.so0420.eunchoy.data.SourceKey
+import com.so0420.eunchoy.data.model.UpdateInfo
+import com.so0420.eunchoy.data.update.UpdateChecker
 import com.so0420.eunchoy.notif.NotifPermissions
+import com.so0420.eunchoy.ui.update.UpdateDialog
+import kotlinx.coroutines.launch
 import com.so0420.eunchoy.ui.components.LoadingBox
 import com.so0420.eunchoy.ui.components.SectionHeader
 import com.so0420.eunchoy.ui.theme.SkyPrimary
@@ -68,6 +77,19 @@ fun SettingsScreen(contentPadding: PaddingValues, onNaverLogin: () -> Unit) {
     val batteryOk = remember(tick) { NotifPermissions.isIgnoringBatteryOptimizations(ctx) }
 
     val notifLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
+
+    val scope = rememberCoroutineScope()
+    var checking by remember { mutableStateOf(false) }
+    var update by remember { mutableStateOf<UpdateInfo?>(null) }
+    fun runUpdateCheck() {
+        checking = true
+        scope.launch {
+            val info = UpdateChecker.check()
+            checking = false
+            if (info != null) update = info
+            else Toast.makeText(ctx, "이미 최신 버전이에요", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     if (s == null) {
         LoadingBox()
@@ -184,6 +206,38 @@ fun SettingsScreen(contentPadding: PaddingValues, onNaverLogin: () -> Unit) {
         item { SectionHeader("고급") }
         item { XBridgeField(initial = s.xBridgeUrl, onSave = vm::setXBridge) }
 
+        item { SectionHeader("정보 · 업데이트") }
+        item {
+            PermissionCard {
+                Row(
+                    Modifier.fillMaxWidth().padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            "현재 버전 v${BuildConfig.VERSION_NAME}",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        Text(
+                            "새 버전이 나오면 앱에서 바로 업데이트할 수 있어요",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    if (checking) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(22.dp),
+                            strokeWidth = 2.dp,
+                            color = SkyPrimary,
+                        )
+                    } else {
+                        OutlinedButton(onClick = { runUpdateCheck() }) { Text("업데이트 확인") }
+                    }
+                }
+            }
+        }
+
         item {
             Text(
                 "은초이 모아보기 · 비공식 팬 제작물\n각 플랫폼의 비공개 API/RSS를 사용하며, 정책 변경 시 일부 기능이 동작하지 않을 수 있어요.",
@@ -193,6 +247,8 @@ fun SettingsScreen(contentPadding: PaddingValues, onNaverLogin: () -> Unit) {
             )
         }
     }
+
+    update?.let { info -> UpdateDialog(info) { update = null } }
 }
 
 @Composable

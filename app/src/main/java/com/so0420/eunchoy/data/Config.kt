@@ -22,6 +22,12 @@ object Config {
     const val X_HANDLE = "Eun_choy"
     const val DEFAULT_X_BRIDGE = "https://nitter.net/$X_HANDLE/rss"
 
+    // GitHub (in-app self-update). Releases must be PUBLIC for the API to be readable without a token.
+    const val GITHUB_OWNER = "so0420"
+    const val GITHUB_REPO = "eunchoy_fan_app"
+    fun releasesApiUrl() = "https://api.github.com/repos/$GITHUB_OWNER/$GITHUB_REPO/releases/latest"
+    fun releasesPageUrl() = "https://github.com/$GITHUB_OWNER/$GITHUB_REPO/releases/latest"
+
     fun chzzkLiveUrl() = "https://chzzk.naver.com/live/$CHZZK_CHANNEL_ID"
     fun chzzkChannelUrl() = "https://chzzk.naver.com/$CHZZK_CHANNEL_ID"
     fun chzzkCommunityUrl() = "https://chzzk.naver.com/$CHZZK_CHANNEL_ID/community"

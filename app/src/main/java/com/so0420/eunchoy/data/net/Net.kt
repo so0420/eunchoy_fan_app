@@ -79,4 +79,32 @@ object Net {
             }
         }.getOrNull()
     }
+
+    /** Streams [url] into [dest], reporting 0f..1f progress. Returns true on success. */
+    suspend fun download(url: String, dest: java.io.File, onProgress: (Float) -> Unit = {}): Boolean =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val req = Request.Builder().url(url).header("User-Agent", Config.UA).build()
+                client.newCall(req).execute().use { resp ->
+                    if (!resp.isSuccessful) return@withContext false
+                    val body = resp.body ?: return@withContext false
+                    val total = body.contentLength()
+                    dest.parentFile?.mkdirs()
+                    body.byteStream().use { input ->
+                        dest.outputStream().use { output ->
+                            val buf = ByteArray(16 * 1024)
+                            var sum = 0L
+                            var read = input.read(buf)
+                            while (read != -1) {
+                                output.write(buf, 0, read)
+                                sum += read
+                                if (total > 0) onProgress((sum.toFloat() / total).coerceIn(0f, 1f))
+                                read = input.read(buf)
+                            }
+                        }
+                    }
+                    true
+                }
+            }.getOrDefault(false)
+        }
 }
