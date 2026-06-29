@@ -28,6 +28,12 @@ object Config {
     fun releasesApiUrl() = "https://api.github.com/repos/$GITHUB_OWNER/$GITHUB_REPO/releases/latest"
     fun releasesPageUrl() = "https://github.com/$GITHUB_OWNER/$GITHUB_REPO/releases/latest"
 
+    // Atom feed isn't subject to the API's 60/hr unauthenticated rate limit — used as a fallback.
+    fun releasesAtomUrl() = "https://github.com/$GITHUB_OWNER/$GITHUB_REPO/releases.atom"
+    // CI names assets eunchoy-moaboki-<tag>.apk, so the download URL is predictable from the tag.
+    fun releaseApkUrl(tag: String) =
+        "https://github.com/$GITHUB_OWNER/$GITHUB_REPO/releases/download/$tag/eunchoy-moaboki-$tag.apk"
+
     fun chzzkLiveUrl() = "https://chzzk.naver.com/live/$CHZZK_CHANNEL_ID"
     fun chzzkChannelUrl() = "https://chzzk.naver.com/$CHZZK_CHANNEL_ID"
     fun chzzkCommunityUrl() = "https://chzzk.naver.com/$CHZZK_CHANNEL_ID/community"

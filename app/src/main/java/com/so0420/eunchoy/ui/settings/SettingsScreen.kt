@@ -55,6 +55,7 @@ import com.so0420.eunchoy.data.NotifyMode
 import com.so0420.eunchoy.data.SourceKey
 import com.so0420.eunchoy.data.model.UpdateInfo
 import com.so0420.eunchoy.data.update.UpdateChecker
+import com.so0420.eunchoy.data.update.UpdateResult
 import com.so0420.eunchoy.notif.NotifPermissions
 import com.so0420.eunchoy.ui.update.UpdateDialog
 import kotlinx.coroutines.launch
@@ -88,10 +89,15 @@ fun SettingsScreen(contentPadding: PaddingValues, onNaverLogin: () -> Unit) {
     fun runUpdateCheck() {
         checking = true
         scope.launch {
-            val info = UpdateChecker.check()
+            val result = UpdateChecker.check()
             checking = false
-            if (info != null) update = info
-            else Toast.makeText(ctx, "이미 최신 버전이에요", Toast.LENGTH_SHORT).show()
+            when (result) {
+                is UpdateResult.Available -> update = result.info
+                UpdateResult.UpToDate -> Toast.makeText(ctx, "이미 최신 버전이에요", Toast.LENGTH_SHORT).show()
+                UpdateResult.Failed -> Toast.makeText(
+                    ctx, "지금은 업데이트를 확인할 수 없어요. 잠시 후 다시 시도해주세요.", Toast.LENGTH_LONG,
+                ).show()
+            }
         }
     }
 

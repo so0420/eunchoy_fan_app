@@ -34,6 +34,7 @@ import androidx.navigation.navArgument
 import com.so0420.eunchoy.appContainer
 import com.so0420.eunchoy.data.model.UpdateInfo
 import com.so0420.eunchoy.data.update.UpdateChecker
+import com.so0420.eunchoy.data.update.UpdateResult
 import com.so0420.eunchoy.ui.cafe.CafeArticleScreen
 import com.so0420.eunchoy.ui.cafe.CafeScreen
 import com.so0420.eunchoy.ui.home.HomeScreen
@@ -81,7 +82,9 @@ fun MainScreen(startRoute: String = "home") {
     val scope = rememberCoroutineScope()
 
     var update by remember { mutableStateOf<UpdateInfo?>(null) }
-    LaunchedEffect(Unit) { update = UpdateChecker.check() }
+    LaunchedEffect(Unit) {
+        (UpdateChecker.check() as? UpdateResult.Available)?.let { update = it.info }
+    }
 
     Scaffold(
         containerColor = SkyBackground,
