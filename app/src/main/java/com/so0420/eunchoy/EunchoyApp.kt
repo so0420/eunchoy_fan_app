@@ -24,11 +24,11 @@ class EunchoyApp : Application() {
         appScope.launch {
             container.settings.loadNaverIntoSession()
             val s = container.settings.current()
-            // WorkManager periodic is the reliable background baseline (15-min floor, no notification).
+            // WorkManager periodic is the reliable background baseline. The fast foreground service is
+            // NOT started here: onCreate can run in a background process (e.g. when WorkManager spins the
+            // process up), and starting a foreground service from the background throws on Android 12+.
+            // MainActivity re-arms the fast service from the foreground instead.
             PollScheduler.ensurePeriodic(this@EunchoyApp, s.pollMinutes)
-            // Fast (~1-min) polling is now AlarmManager-based (no notification), so it's safe to arm
-            // from anywhere — scheduling an alarm has no foreground requirement.
-            if (s.fastPolling) PollScheduler.startFast(this@EunchoyApp)
         }
     }
 }
