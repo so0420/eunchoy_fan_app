@@ -19,8 +19,8 @@ class BootReceiver : BroadcastReceiver() {
             try {
                 val s = app.container.settings.current()
                 PollScheduler.ensurePeriodic(context, s.pollMinutes)
-                // Do NOT start the fast foreground service from a boot broadcast: Android 14+ forbids
-                // starting a dataSync FGS from BOOT_COMPLETED. It re-arms when the user next opens the app.
+                // Fast polling is AlarmManager-based now (no FGS), so re-arming it from boot is fine.
+                if (s.fastPolling) PollScheduler.startFast(context)
             } finally {
                 pending.finish()
             }

@@ -111,6 +111,16 @@ fun MainScreen(startRoute: String = "home") {
         if (alarmEnabled && missing) showAlarmPermPrompt = true
     }
 
+    // Single navigation path for switching tabs — used by the bottom bar AND any in-app deep link
+    // (e.g. the alarm-permission dialog), so the saved-state back stack never gets corrupted.
+    fun navigateTab(route: String) {
+        nav.navigate(route) {
+            popUpTo(nav.graph.startDestinationId) { saveState = true }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
+
     Scaffold(
         containerColor = SkyBackground,
         topBar = {
@@ -130,13 +140,7 @@ fun MainScreen(startRoute: String = "home") {
                     TABS.forEach { tab ->
                         NavigationBarItem(
                             selected = route == tab.route,
-                            onClick = {
-                                nav.navigate(tab.route) {
-                                    popUpTo(nav.graph.startDestinationId) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
+                            onClick = { navigateTab(tab.route) },
                             icon = { Icon(tab.icon, contentDescription = tab.label) },
                             label = { Text(tab.label) },
                             colors = NavigationBarItemDefaults.colors(
@@ -223,7 +227,7 @@ fun MainScreen(startRoute: String = "home") {
             confirmButton = {
                 TextButton(onClick = {
                     showAlarmPermPrompt = false
-                    nav.navigate("settings")
+                    navigateTab("settings")
                 }) { Text("설정 열기") }
             },
             dismissButton = {

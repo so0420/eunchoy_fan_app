@@ -11,8 +11,6 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
@@ -67,11 +65,10 @@
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
 
-        <!-- Optional ~1-min realtime poller -->
-        <service
-            android:name=".work.PollForegroundService"
-            android:exported="false"
-            android:foregroundServiceType="dataSync" />
+        <!-- ~1-min realtime poll tick (AlarmManager-driven; no persistent notification) -->
+        <receiver
+            android:name=".work.PollAlarmReceiver"
+            android:exported="false" />
 
         <!-- Re-arm polling after reboot -->
         <receiver

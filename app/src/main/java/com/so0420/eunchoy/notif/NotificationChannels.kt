@@ -13,7 +13,6 @@ import android.provider.Settings
 object NotificationChannels {
     const val ALARM = "alarm_v1"     // alarm-style (DND/silent bypass)
     const val ALERT = "alert_v1"     // normal heads-up
-    const val SERVICE = "service_v2" // min-importance foreground-service notification (no status-bar icon)
 
     fun alarmSoundUri(context: Context): Uri =
         RingtoneManager.getActualDefaultRingtoneUri(context, RingtoneManager.TYPE_ALARM)
@@ -45,13 +44,9 @@ object NotificationChannels {
             lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
         }
 
-        val service = NotificationChannel(SERVICE, "백그라운드 감시", NotificationManager.IMPORTANCE_MIN).apply {
-            description = "새 소식을 실시간으로 확인하는 중 (상태바에 표시되지 않음)"
-            setShowBadge(false)
-        }
-
-        nm.createNotificationChannels(listOf(alarm, alert, service))
-        // Remove the old LOW-importance channel that showed a persistent status-bar icon.
+        nm.createNotificationChannels(listOf(alarm, alert))
+        // Fast polling no longer uses a foreground service — remove its old channels entirely.
         runCatching { nm.deleteNotificationChannel("service_v1") }
+        runCatching { nm.deleteNotificationChannel("service_v2") }
     }
 }
