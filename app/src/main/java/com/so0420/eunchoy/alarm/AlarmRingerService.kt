@@ -20,6 +20,8 @@ import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import com.so0420.eunchoy.notif.AlertPayload
 import com.so0420.eunchoy.notif.NotificationChannels
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 /**
  * Foreground service that *guarantees* audibility: it plays the device alarm sound on the ALARM
@@ -66,6 +68,7 @@ class AlarmRingerService : Service() {
         startSound()
         startVibration()
         autoStop.postDelayed({ stopSelf() }, MAX_RING_MS)
+        _ringing.value = true // lets the app show an in-app "끄기" even if the notification is hidden
         return START_NOT_STICKY
     }
 
@@ -121,6 +124,7 @@ class AlarmRingerService : Service() {
 
     /** Releases all ringing resources. Safe to call repeatedly. */
     private fun stopRinging() {
+        _ringing.value = false
         autoStop.removeCallbacksAndMessages(null)
         runCatching { player?.run { if (isPlaying) stop(); release() } }
         player = null
@@ -138,6 +142,10 @@ class AlarmRingerService : Service() {
 
     companion object {
         private const val MAX_RING_MS = 3 * 60 * 1000L
+
+        /** True while the alarm is actively ringing — the app observes this to offer an in-app stop. */
+        private val _ringing = MutableStateFlow(false)
+        val ringing: StateFlow<Boolean> = _ringing
 
         const val ACTION_STOP = "com.so0420.eunchoy.action.STOP_ALARM"
         const val EXTRA_TITLE = "title"

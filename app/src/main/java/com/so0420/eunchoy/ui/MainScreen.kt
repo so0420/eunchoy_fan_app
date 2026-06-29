@@ -7,6 +7,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocalCafe
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SmartDisplay
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -15,10 +16,12 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,7 +34,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.so0420.eunchoy.alarm.AlarmRingerService
 import com.so0420.eunchoy.appContainer
+import com.so0420.eunchoy.data.Config
 import com.so0420.eunchoy.data.model.UpdateInfo
 import com.so0420.eunchoy.data.update.UpdateChecker
 import com.so0420.eunchoy.data.update.UpdateResult
@@ -49,6 +54,7 @@ import com.so0420.eunchoy.ui.x.XScreen
 import com.so0420.eunchoy.ui.youtube.YoutubeScreen
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
@@ -85,6 +91,10 @@ fun MainScreen(startRoute: String = "home") {
     LaunchedEffect(Unit) {
         (UpdateChecker.check() as? UpdateResult.Available)?.let { update = it.info }
     }
+
+    // Universal alarm dismiss: works even if the notification/full-screen UI was suppressed.
+    val alarmRinging by AlarmRingerService.ringing.collectAsState()
+    val uriHandler = LocalUriHandler.current
 
     Scaffold(
         containerColor = SkyBackground,
@@ -157,4 +167,22 @@ fun MainScreen(startRoute: String = "home") {
     }
 
     update?.let { info -> UpdateDialog(info) { update = null } }
+
+    if (alarmRinging) {
+        AlertDialog(
+            onDismissRequest = { },
+            icon = { Text("🔔") },
+            title = { Text("알람이 울리고 있어요") },
+            text = { Text("은초이 방송 시작 알람입니다.") },
+            confirmButton = {
+                TextButton(onClick = { AlarmRingerService.stop(context) }) { Text("끄기") }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    AlarmRingerService.stop(context)
+                    uriHandler.openUri(Config.chzzkLiveUrl())
+                }) { Text("방송 보기") }
+            },
+        )
+    }
 }
