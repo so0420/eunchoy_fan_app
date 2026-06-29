@@ -2,11 +2,13 @@ package com.so0420.eunchoy.ui.x
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -65,28 +67,33 @@ fun XScreen(contentPadding: PaddingValues) {
     val vm: XViewModel = appViewModel { XViewModel(it) }
     val tweets by vm.tweets.collectAsState()
     val uriHandler = LocalUriHandler.current
-    val topInset = contentPadding.calculateTopPadding()
     val bottomInset = contentPadding.calculateBottomPadding()
 
     AutoRefresh(intervalMs = 90_000L) { vm.refresh() }
 
-    Box(Modifier.fillMaxSize()) {
+    Column(Modifier.fillMaxSize().padding(top = contentPadding.calculateTopPadding())) {
+        // "X에서 열기" — vertically centered in a header band, right-aligned.
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(60.dp)
+                .padding(horizontal = 12.dp),
+            contentAlignment = Alignment.CenterEnd,
+        ) {
+            OpenInXButton(onClick = { uriHandler.openUri(Config.xProfileUrl()) })
+        }
+
         when (val s = tweets) {
-            is Async.Loading -> Box(Modifier.padding(top = topInset)) { LoadingBox() }
-            is Async.Failure -> Box(Modifier.padding(top = topInset)) {
-                ErrorBox(s.message, onRetry = vm::refresh)
-            }
+            is Async.Loading -> LoadingBox()
+            is Async.Failure -> ErrorBox(s.message, onRetry = vm::refresh)
             is Async.Success -> if (s.data.isEmpty()) {
-                Box(Modifier.padding(top = topInset)) {
-                    EmptyBox("최근 글을 불러오지 못했어요.\n오른쪽 위 ‘X에서 열기’로 직접 볼 수 있어요.", emoji = "🐦")
-                }
+                EmptyBox("최근 글을 불러오지 못했어요.\n위 ‘X에서 열기’로 직접 볼 수 있어요.", emoji = "🐦")
             } else {
                 LazyColumn(
                     contentPadding = PaddingValues(
                         start = 16.dp,
                         end = 16.dp,
-                        // leave room for the floating "X에서 열기" button in the corner
-                        top = topInset + 56.dp,
+                        top = 4.dp,
                         bottom = bottomInset + 20.dp,
                     ),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -97,17 +104,7 @@ fun XScreen(contentPadding: PaddingValues) {
                     }
                 }
             }
-
-            else -> Unit
         }
-
-        // Corner action: always available, never depends on a fragile RSS bridge.
-        OpenInXButton(
-            onClick = { uriHandler.openUri(Config.xProfileUrl()) },
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(top = topInset + 10.dp, end = 12.dp),
-        )
     }
 }
 

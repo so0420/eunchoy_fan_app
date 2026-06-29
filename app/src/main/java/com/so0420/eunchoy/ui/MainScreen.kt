@@ -1,5 +1,7 @@
 package com.so0420.eunchoy.ui
 
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AlternateEmail
@@ -37,9 +39,11 @@ import androidx.navigation.navArgument
 import com.so0420.eunchoy.alarm.AlarmRingerService
 import com.so0420.eunchoy.appContainer
 import com.so0420.eunchoy.data.Config
+import com.so0420.eunchoy.data.NotifyMode
 import com.so0420.eunchoy.data.model.UpdateInfo
 import com.so0420.eunchoy.data.update.UpdateChecker
 import com.so0420.eunchoy.data.update.UpdateResult
+import com.so0420.eunchoy.notif.NotifPermissions
 import com.so0420.eunchoy.ui.cafe.CafeArticleScreen
 import com.so0420.eunchoy.ui.cafe.CafeScreen
 import com.so0420.eunchoy.ui.home.HomeScreen
@@ -96,6 +100,17 @@ fun MainScreen(startRoute: String = "home") {
     val alarmRinging by AlarmRingerService.ringing.collectAsState()
     val uriHandler = LocalUriHandler.current
 
+    // If alarm-style alerts are on but the permissions that make them appear on ANY screen are
+    // missing, prompt the user — otherwise the alarm rings without a system notification/full-screen.
+    var showAlarmPermPrompt by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        val s = context.appContainer.settings.current()
+        val alarmEnabled = s.sources.values.any { it.mode == NotifyMode.ALARM }
+        val missing = !NotifPermissions.notificationsEnabled(context) ||
+            !NotifPermissions.canUseFullScreenIntent(context)
+        if (alarmEnabled && missing) showAlarmPermPrompt = true
+    }
+
     Scaffold(
         containerColor = SkyBackground,
         topBar = {
@@ -111,7 +126,7 @@ fun MainScreen(startRoute: String = "home") {
         },
         bottomBar = {
             if (showBars) {
-                NavigationBar(containerColor = SkySurface, tonalElevation = 3.dp) {
+                NavigationBar(containerColor = SkySurface, tonalElevation = 0.dp) {
                     TABS.forEach { tab ->
                         NavigationBarItem(
                             selected = route == tab.route,
@@ -137,7 +152,15 @@ fun MainScreen(startRoute: String = "home") {
             }
         },
     ) { inner ->
-        NavHost(navController = nav, startDestination = startRoute, modifier = Modifier) {
+        NavHost(
+            navController = nav,
+            startDestination = startRoute,
+            // Instant tab switches — no slide/fade so no elevation-edge shadow during transitions.
+            enterTransition = { EnterTransition.None },
+            exitTransition = { ExitTransition.None },
+            popEnterTransition = { EnterTransition.None },
+            popExitTransition = { ExitTransition.None },
+        ) {
             composable("home") { HomeScreen(inner) }
             composable("cafe") { CafeScreen(inner, onOpenArticle = { nav.navigate("cafe_article/$it") }) }
             composable("youtube") { YoutubeScreen(inner) }
@@ -182,6 +205,29 @@ fun MainScreen(startRoute: String = "home") {
                     AlarmRingerService.stop(context)
                     uriHandler.openUri(Config.chzzkLiveUrl())
                 }) { Text("방송 보기") }
+            },
+        )
+    }
+
+    if (showAlarmPermPrompt) {
+        AlertDialog(
+            onDismissRequest = { showAlarmPermPrompt = false },
+            icon = { Text("🔔") },
+            title = { Text("알람 권한이 필요해요") },
+            text = {
+                Text(
+                    "알람이 잠금화면·다른 앱 위에서도 뜨고 알림에서 바로 끌 수 있으려면 " +
+                        "‘알림 표시’와 ‘전체화면 알림’ 권한을 켜주세요.",
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showAlarmPermPrompt = false
+                    nav.navigate("settings")
+                }) { Text("설정 열기") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAlarmPermPrompt = false }) { Text("나중에") }
             },
         )
     }
