@@ -7,6 +7,7 @@ import com.so0420.eunchoy.data.model.ChzzkVod
 import com.so0420.eunchoy.data.model.CommunityPost
 import com.so0420.eunchoy.data.model.LiveStatus
 import com.so0420.eunchoy.ui.Async
+import com.so0420.eunchoy.ui.publish
 import com.so0420.eunchoy.ui.runAsync
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,27 +28,20 @@ class HomeViewModel(container: AppContainer) : ViewModel() {
     private val _vods = MutableStateFlow<Async<List<ChzzkVod>>>(Async.Loading)
     val vods = _vods.asStateFlow()
 
-    private val _refreshing = MutableStateFlow(false)
-    val refreshing = _refreshing.asStateFlow()
-
-    init {
-        refresh()
-    }
-
+    /** Re-fetch everything. Safe to call periodically — no Loading flash, no player churn. */
     fun refresh() {
         viewModelScope.launch {
-            _refreshing.value = true
-            _live.value = Async.Loading
             val res = runAsync { repo.liveStatus() }
-            _live.value = res
-            _hls.value = if (res is Async.Success && res.data.isLive) {
-                runCatching { repo.resolveLiveHls(preferLowLatency = true) }.getOrNull()
-            } else {
-                null
+            _live.publish(res)
+            if (res is Async.Success) {
+                when {
+                    !res.data.isLive -> _hls.value = null
+                    // Resolve the HLS url only once per live session so the player isn't recreated.
+                    _hls.value == null -> _hls.value = runCatching { repo.resolveLiveHls(preferLowLatency = true) }.getOrNull()
+                }
             }
-            _refreshing.value = false
         }
-        viewModelScope.launch { _community.value = runAsync { repo.communityPosts(limit = 30) } }
-        viewModelScope.launch { _vods.value = runAsync { repo.chzzkVods(size = 20) } }
+        viewModelScope.launch { _community.publish(runAsync { repo.communityPosts(limit = 30) }) }
+        viewModelScope.launch { _vods.publish(runAsync { repo.chzzkVods(size = 20) }) }
     }
 }

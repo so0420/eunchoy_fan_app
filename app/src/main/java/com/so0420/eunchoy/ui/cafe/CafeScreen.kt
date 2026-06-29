@@ -19,7 +19,9 @@ import com.so0420.eunchoy.ui.components.CafeCard
 import com.so0420.eunchoy.ui.components.EmptyBox
 import com.so0420.eunchoy.ui.components.ErrorBox
 import com.so0420.eunchoy.ui.components.LoadingBox
+import com.so0420.eunchoy.ui.publish
 import com.so0420.eunchoy.ui.runAsync
+import com.so0420.eunchoy.ui.util.AutoRefresh
 import com.so0420.eunchoy.ui.util.appViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,10 +32,8 @@ class CafeViewModel(container: AppContainer) : ViewModel() {
     private val _posts = MutableStateFlow<Async<List<CafePost>>>(Async.Loading)
     val posts = _posts.asStateFlow()
 
-    init { refresh() }
-
     fun refresh() {
-        viewModelScope.launch { _posts.value = runAsync { repo.cafePosts(maxPages = 3) } }
+        viewModelScope.launch { _posts.publish(runAsync { repo.cafePosts(maxPages = 3) }) }
     }
 }
 
@@ -41,6 +41,8 @@ class CafeViewModel(container: AppContainer) : ViewModel() {
 fun CafeScreen(contentPadding: PaddingValues, onOpenArticle: (Long) -> Unit) {
     val vm: CafeViewModel = appViewModel { CafeViewModel(it) }
     val posts by vm.posts.collectAsState()
+
+    AutoRefresh(intervalMs = 60_000L) { vm.refresh() }
 
     when (val s = posts) {
         is Async.Loading -> LoadingBox()

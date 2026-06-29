@@ -61,6 +61,7 @@ import com.so0420.eunchoy.ui.theme.OfflineGray
 import com.so0420.eunchoy.ui.theme.SkyPrimary
 import com.so0420.eunchoy.ui.theme.SkySurface
 import com.so0420.eunchoy.ui.theme.SkySurfaceVariant
+import com.so0420.eunchoy.ui.util.AutoRefresh
 import com.so0420.eunchoy.ui.util.appViewModel
 import com.so0420.eunchoy.util.DateUtil
 
@@ -72,6 +73,9 @@ fun HomeScreen(contentPadding: PaddingValues) {
     val community by vm.community.collectAsState()
     val vods by vm.vods.collectAsState()
     val uriHandler = LocalUriHandler.current
+
+    // Live-status etc. refresh on entry, on app-return, and every 30s while visible.
+    AutoRefresh(intervalMs = 30_000L) { vm.refresh() }
 
     LazyColumn(
         contentPadding = PaddingValues(

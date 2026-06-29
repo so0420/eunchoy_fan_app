@@ -159,13 +159,19 @@ fun SettingsScreen(contentPadding: PaddingValues, onNaverLogin: () -> Unit) {
         item {
             PermissionCard {
                 SourceKey.entries.forEachIndexed { i, key ->
-                    SourceRow(
-                        emoji = key.emoji,
-                        label = key.label,
-                        mode = s.prefs(key).mode,
-                        onMode = { vm.setMode(key, it) },
-                        last = i == SourceKey.entries.lastIndex,
-                    )
+                    val isLast = i == SourceKey.entries.lastIndex
+                    if (key == SourceKey.CHZZK_LIVE) {
+                        SourceRow(key.emoji, key.label, s.prefs(key).mode, { vm.setMode(key, it) }, last = true)
+                        ToggleRow(
+                            title = "방송 자동 열기",
+                            subtitle = "방송이 시작되면 방송 페이지를 자동으로 엽니다",
+                            checked = s.autoOpenLive,
+                            onChange = vm::setAutoOpenLive,
+                            last = isLast,
+                        )
+                    } else {
+                        SourceRow(key.emoji, key.label, s.prefs(key).mode, { vm.setMode(key, it) }, last = isLast)
+                    }
                 }
             }
             Text(

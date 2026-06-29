@@ -37,8 +37,10 @@ import com.so0420.eunchoy.ui.components.EmptyBox
 import com.so0420.eunchoy.ui.components.ErrorBox
 import com.so0420.eunchoy.ui.components.LoadingBox
 import com.so0420.eunchoy.ui.components.TweetCard
+import com.so0420.eunchoy.ui.publish
 import com.so0420.eunchoy.ui.runAsync
 import com.so0420.eunchoy.ui.theme.SkyPrimary
+import com.so0420.eunchoy.ui.util.AutoRefresh
 import com.so0420.eunchoy.ui.util.appViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -50,12 +52,10 @@ class XViewModel(container: AppContainer) : ViewModel() {
     private val _tweets = MutableStateFlow<Async<List<Tweet>>>(Async.Loading)
     val tweets = _tweets.asStateFlow()
 
-    init { refresh() }
-
     fun refresh() {
         viewModelScope.launch {
             val s = settings.current()
-            _tweets.value = runAsync { repo.tweets(s.xBridgeUrl) }
+            _tweets.publish(runAsync { repo.tweets(s.xBridgeUrl) })
         }
     }
 }
@@ -67,6 +67,8 @@ fun XScreen(contentPadding: PaddingValues) {
     val uriHandler = LocalUriHandler.current
     val topInset = contentPadding.calculateTopPadding()
     val bottomInset = contentPadding.calculateBottomPadding()
+
+    AutoRefresh(intervalMs = 90_000L) { vm.refresh() }
 
     Box(Modifier.fillMaxSize()) {
         when (val s = tweets) {

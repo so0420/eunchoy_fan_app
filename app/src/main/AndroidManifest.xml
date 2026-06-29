@@ -50,6 +50,17 @@
             android:turnScreenOn="true"
             android:theme="@style/Theme.EunchoyFanApp" />
 
+        <!-- Auto-opens the broadcast page when "방송 자동 열기" is on -->
+        <activity
+            android:name=".alarm.LiveAutoOpenActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:launchMode="singleTask"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
         <!-- Ringer: plays the alarm sound (USAGE_ALARM) through silent/DND -->
         <service
             android:name=".alarm.AlarmRingerService"

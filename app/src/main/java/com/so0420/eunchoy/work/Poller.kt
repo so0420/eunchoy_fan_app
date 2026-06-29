@@ -42,7 +42,7 @@ class Poller(private val container: AppContainer) {
     // ---- Chzzk live: notify on CLOSE->OPEN (or a new broadcast openDate) ----
     private suspend fun checkLive(s: AppSettings) {
         val prefs = s.prefs(SourceKey.CHZZK_LIVE)
-        if (!prefs.notify) return
+        if (!prefs.notify && !s.autoOpenLive) return
         val detail = repo.liveDetail() ?: return
         val prev = settings.getSeen(SourceKey.CHZZK_LIVE)
         if (!detail.isLive || detail.openDate == null) {
@@ -53,17 +53,21 @@ class Poller(private val container: AppContainer) {
         if (prev == detail.openDate) return
         settings.setSeen(SourceKey.CHZZK_LIVE, detail.openDate)
         if (prev == null) return // first poll caught an already-running broadcast -> seed only
-        val cat = detail.liveCategoryValue?.let { " · $it" }.orEmpty()
-        emit(
-            prefs,
-            AlertPayload(
-                source = SourceKey.CHZZK_LIVE,
-                title = "🔴 은초이 방송 시작!",
-                body = (detail.liveTitle ?: "방송이 시작됐어요") + cat,
-                url = Config.chzzkLiveUrl(),
-                imageUrl = detail.liveImageUrl?.replace("{type}", "720"),
-            ),
-        )
+
+        if (s.autoOpenLive) notifier.autoOpenLive(Config.chzzkLiveUrl())
+        if (prefs.notify) {
+            val cat = detail.liveCategoryValue?.let { " · $it" }.orEmpty()
+            emit(
+                prefs,
+                AlertPayload(
+                    source = SourceKey.CHZZK_LIVE,
+                    title = "🔴 은초이 방송 시작!",
+                    body = (detail.liveTitle ?: "방송이 시작됐어요") + cat,
+                    url = Config.chzzkLiveUrl(),
+                    imageUrl = detail.liveImageUrl?.replace("{type}", "720"),
+                ),
+            )
+        }
     }
 
     // ---- Chzzk community ----

@@ -32,6 +32,8 @@ class SettingsViewModel(
         if (value) PollScheduler.startFast(appContext) else PollScheduler.stopFast(appContext)
     }
 
+    fun setAutoOpenLive(value: Boolean) = viewModelScope.launch { settings.setAutoOpenLive(value) }
+
     fun setPollMinutes(minutes: Int) = viewModelScope.launch {
         settings.setPollMinutes(minutes)
         PollScheduler.ensurePeriodic(appContext, minutes)

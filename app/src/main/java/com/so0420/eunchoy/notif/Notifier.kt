@@ -18,6 +18,7 @@ import com.so0420.eunchoy.data.SourceKey
 import com.so0420.eunchoy.data.net.Net
 import com.so0420.eunchoy.alarm.AlarmNotification
 import com.so0420.eunchoy.alarm.AlarmRingerService
+import com.so0420.eunchoy.alarm.LiveAutoOpenActivity
 
 /** A single new-item alert ready to be posted. */
 data class AlertPayload(
@@ -58,6 +59,34 @@ class Notifier(private val context: Context) {
             }
         }
         runCatching { AlarmRingerService.start(context, payload) }
+    }
+
+    /** Auto-opens the live page via a full-screen intent (works from the background when FSI is granted). */
+    @SuppressLint("MissingPermission") // guarded by canPostNotifications()
+    fun autoOpenLive(url: String) {
+        val open = LiveAutoOpenActivity.intent(context, url)
+        if (!canPostNotifications()) {
+            runCatching { context.startActivity(open) } // best-effort (only works while foreground)
+            return
+        }
+        val fsi = PendingIntent.getActivity(
+            context,
+            7,
+            open,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        val notification = NotificationCompat.Builder(context, NotificationChannels.ALERT)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle("🔴 은초이 방송 시작")
+            .setContentText("방송 페이지를 여는 중...")
+            .setColor(accent)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_EVENT)
+            .setAutoCancel(true)
+            .setContentIntent(fsi)
+            .setFullScreenIntent(fsi, true)
+            .build()
+        runCatching { NotificationManagerCompat.from(context).notify(LiveAutoOpenActivity.NOTIF_ID, notification) }
     }
 
     private fun canPostNotifications(): Boolean =

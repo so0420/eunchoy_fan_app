@@ -30,9 +30,11 @@ import com.so0420.eunchoy.ui.components.EmptyBox
 import com.so0420.eunchoy.ui.components.ErrorBox
 import com.so0420.eunchoy.ui.components.LoadingBox
 import com.so0420.eunchoy.ui.components.YoutubeCard
+import com.so0420.eunchoy.ui.publish
 import com.so0420.eunchoy.ui.runAsync
 import com.so0420.eunchoy.ui.theme.SkyPrimary
 import com.so0420.eunchoy.ui.theme.SkySurface
+import com.so0420.eunchoy.ui.util.AutoRefresh
 import com.so0420.eunchoy.ui.util.appViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -45,11 +47,9 @@ class YoutubeViewModel(container: AppContainer) : ViewModel() {
     private val _vod = MutableStateFlow<Async<List<YoutubeVideo>>>(Async.Loading)
     val vod = _vod.asStateFlow()
 
-    init { refresh() }
-
     fun refresh() {
-        viewModelScope.launch { _main.value = runAsync { repo.youtubeMain() } }
-        viewModelScope.launch { _vod.value = runAsync { repo.youtubeVod() } }
+        viewModelScope.launch { _main.publish(runAsync { repo.youtubeMain() }) }
+        viewModelScope.launch { _vod.publish(runAsync { repo.youtubeVod() }) }
     }
 }
 
@@ -61,6 +61,8 @@ fun YoutubeScreen(contentPadding: PaddingValues) {
     val uriHandler = LocalUriHandler.current
     val pagerState = rememberPagerState(pageCount = { 2 })
     val scope = rememberCoroutineScope()
+
+    AutoRefresh(intervalMs = 60_000L) { vm.refresh() }
 
     Column(Modifier.fillMaxSize().padding(top = contentPadding.calculateTopPadding())) {
         TabRow(

@@ -28,6 +28,7 @@ data class AppSettings(
     val pollMinutes: Int,
     val fastPolling: Boolean,
     val naverLoggedIn: Boolean,
+    val autoOpenLive: Boolean,
 ) {
     fun prefs(key: SourceKey): SourcePrefs = sources[key] ?: SourcePrefs(NotifyMode.OFF)
 }
@@ -45,6 +46,7 @@ class SettingsRepository(context: Context) {
     private val xBridge = stringPreferencesKey("x_bridge")
     private val pollMin = intPreferencesKey("poll_minutes")
     private val fastPoll = booleanPreferencesKey("fast_polling")
+    private val autoOpen = booleanPreferencesKey("auto_open_live")
     private val nidAut = stringPreferencesKey("nid_aut")
     private val nidSes = stringPreferencesKey("nid_ses")
 
@@ -60,6 +62,7 @@ class SettingsRepository(context: Context) {
             pollMinutes = p[pollMin] ?: 15,
             fastPolling = p[fastPoll] ?: false,
             naverLoggedIn = !p[nidAut].isNullOrBlank() && !p[nidSes].isNullOrBlank(),
+            autoOpenLive = p[autoOpen] ?: false,
         )
     }
 
@@ -80,6 +83,7 @@ class SettingsRepository(context: Context) {
     suspend fun setXBridge(url: String) = ds.edit { it[xBridge] = url }
     suspend fun setPollMinutes(min: Int) = ds.edit { it[pollMin] = min }
     suspend fun setFastPolling(value: Boolean) = ds.edit { it[fastPoll] = value }
+    suspend fun setAutoOpenLive(value: Boolean) = ds.edit { it[autoOpen] = value }
 
     suspend fun setNaverCookies(aut: String?, ses: String?) {
         ds.edit {
