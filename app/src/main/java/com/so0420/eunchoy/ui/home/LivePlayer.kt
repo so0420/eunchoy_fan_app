@@ -2,7 +2,6 @@ package com.so0420.eunchoy.ui.home
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -19,12 +18,14 @@ import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.ui.PlayerView
 import com.so0420.eunchoy.data.Config
 
-/** Embedded Chzzk live HLS player. [hlsUrl] is a master .m3u8 resolved fresh by the repository. */
+/**
+ * Silent, controls-free Chzzk live preview: plays the HLS stream muted with NO player UI
+ * (no controller pops up on tap). Tap "방송 보기" to watch with sound on Chzzk.
+ */
 @OptIn(UnstableApi::class)
 @Composable
 fun LivePlayer(
     hlsUrl: String,
-    muted: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -45,11 +46,9 @@ fun LivePlayer(
             setMediaSource(source)
             prepare()
             playWhenReady = true
-            volume = 0f
+            volume = 0f // preview is always silent
         }
     }
-
-    LaunchedEffect(muted, exo) { exo.volume = if (muted) 0f else 1f }
 
     // Pause buffering/decoding while the app is backgrounded; resume when it returns.
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -72,9 +71,8 @@ fun LivePlayer(
         factory = { ctx ->
             PlayerView(ctx).apply {
                 player = exo
-                useController = true
-                setShowNextButton(false)
-                setShowPreviousButton(false)
+                useController = false  // no controls UI; pure silent preview
+                setKeepContentOnPlayerReset(true)
             }
         },
     )

@@ -145,7 +145,6 @@ fun HomeScreen(contentPadding: PaddingValues) {
 
 @Composable
 private fun LiveHeroCard(live: LiveStatus, hls: String?, onOpen: () -> Unit) {
-    var muted by remember { mutableStateOf(true) }
     Card(
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = SkySurface),
@@ -160,23 +159,7 @@ private fun LiveHeroCard(live: LiveStatus, hls: String?, onOpen: () -> Unit) {
                 .background(SkySurfaceVariant),
         ) {
             if (live.isLive && hls != null) {
-                LivePlayer(hlsUrl = hls, muted = muted, modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f))
-                IconButton(
-                    onClick = { muted = !muted },
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(6.dp)
-                        .size(36.dp)
-                        .clip(RoundedCornerShape(50))
-                        .background(Color.Black.copy(alpha = 0.45f)),
-                ) {
-                    Icon(
-                        if (muted) Icons.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
-                        contentDescription = "음소거",
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
+                LivePlayer(hlsUrl = hls, modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f))
             } else {
                 AsyncImage(
                     model = live.thumbnailUrl ?: live.channelImageUrl,
